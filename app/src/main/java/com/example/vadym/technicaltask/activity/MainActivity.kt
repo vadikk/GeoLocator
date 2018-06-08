@@ -33,6 +33,7 @@ class MainActivity : AppCompatActivity(),
     private val REQUEST_PERMISSION_CODE = 34
     private val UPDATE_INTERVAL = (10 * 1000).toLong()  /* 10 secs */
     private val FASTEST_INTERVAL = (2 * 1000).toLong() /* 2 sec */
+    private var canUseLocationUpdates = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,13 +55,20 @@ class MainActivity : AppCompatActivity(),
         mapFragment.getMapAsync(this)
     }
 
+    override fun onStart() {
+        super.onStart()
+        if (!checkPermission()) {
+            requestPermission()
+        } else {
+            canUseLocationUpdates = true
+        }
+    }
 
     @SuppressLint("MissingPermission")
     override fun onResume() {
         super.onResume()
-        fusedLocationProvider.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper())
-
-
+        if(canUseLocationUpdates)
+            fusedLocationProvider.requestLocationUpdates(locationRequest, locationCallback, Looper.myLooper())
     }
 
     override fun onPause() {
@@ -88,12 +96,8 @@ class MainActivity : AppCompatActivity(),
         settingsClient.checkLocationSettings(locationSettingsRequest)
 
         locationCallback = object : LocationCallback() {
-            override fun onLocationResult(p0: LocationResult) {
-                if (!checkPermission()) {
-                    requestPermission()
-                } else {
-                    onLocationChanged(p0.getLastLocation())
-                }
+            override fun onLocationResult(p0: LocationResult?) {
+               if(p0 !=null) onLocationChanged(p0.getLastLocation())
             }
         }
 
@@ -114,5 +118,6 @@ class MainActivity : AppCompatActivity(),
     override fun onMapReady(p0: GoogleMap) {
         viewModel.getMap(p0)
         viewModel.downloadData()
+
     }
 }
